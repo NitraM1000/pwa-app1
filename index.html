@@ -2,18 +2,646 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>MyApp</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Demain</title>
   <link rel="manifest" href="manifest.json">
-  <!-- iOS support -->
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="MyApp">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Demain">
+  <meta name="theme-color" content="#0d0d0d">
   <link rel="apple-touch-icon" href="icon-512.png">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #161616;
+      --surface2:  #1e1e1e;
+      --border:    #272727;
+      --text:      #ececec;
+      --dim:       #555;
+      --accent:    #a78bfa;
+      --green:     #4ade80;
+      --red:       #f87171;
+    }
+
+    html { background: var(--bg); }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+      min-height: 100dvh;
+      max-width: 430px;
+      margin: 0 auto;
+      padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── HEADER ── */
+    header {
+      padding: calc(52px + env(safe-area-inset-top, 0px)) 24px 20px;
+    }
+    .app-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .app-date {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.2;
+      text-transform: capitalize;
+    }
+
+    /* ── SECTIONS ── */
+    .section { padding: 28px 24px 0; }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--dim);
+    }
+    .section-meta {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--dim);
+    }
+    .section-meta.complete { color: var(--green); }
+
+    .add-inline {
+      background: none;
+      border: none;
+      color: var(--accent);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0 0 0 12px;
+      opacity: 0.8;
+    }
+    .add-inline:active { opacity: 0.5; }
+
+    /* ── OBJECTIVE LIST ── */
+    .obj-list { list-style: none; }
+
+    .obj-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 13px 0;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      position: relative;
+      overflow: hidden;
+    }
+    .obj-item:last-child { border-bottom: none; }
+    .obj-item:active { opacity: 0.7; }
+
+    .circle {
+      width: 23px;
+      height: 23px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.18s, border-color 0.18s;
+    }
+    .obj-item.done .circle {
+      background: var(--green);
+      border-color: var(--green);
+    }
+    .check-icon {
+      opacity: 0;
+      color: #0d0d0d;
+      font-size: 12px;
+      font-weight: 800;
+      line-height: 1;
+      transition: opacity 0.15s;
+    }
+    .obj-item.done .check-icon { opacity: 1; }
+
+    .obj-text {
+      flex: 1;
+      font-size: 16px;
+      line-height: 1.45;
+      word-break: break-word;
+      transition: color 0.15s;
+    }
+    .obj-item.done .obj-text {
+      text-decoration: line-through;
+      color: var(--dim);
+    }
+
+    .del-btn {
+      background: none;
+      border: none;
+      color: var(--red);
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 4px 6px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .obj-item:hover .del-btn,
+    .obj-item.reveal-del .del-btn { opacity: 0.7; }
+    .del-btn:active { opacity: 1; }
+
+    /* ── EMPTY STATE ── */
+    .empty {
+      font-size: 14px;
+      color: var(--dim);
+      padding: 18px 0 10px;
+    }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      border: none;
+      color: #0d0d0d;
+      font-size: 30px;
+      font-weight: 300;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 24px rgba(167,139,250,0.45);
+      z-index: 50;
+      transition: transform 0.12s, box-shadow 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fab:active {
+      transform: scale(0.92);
+      box-shadow: 0 2px 12px rgba(167,139,250,0.3);
+    }
+
+    /* ── MODAL ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      display: flex;
+      align-items: flex-end;
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s;
+    }
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .sheet {
+      background: var(--surface);
+      border-radius: 20px 20px 0 0;
+      padding: 16px 24px calc(24px + env(safe-area-inset-bottom, 0px));
+      width: 100%;
+      transform: translateY(100%);
+      transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .overlay.open .sheet { transform: translateY(0); }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 20px;
+    }
+    .sheet-title {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--dim);
+      margin-bottom: 14px;
+    }
+
+    .modal-input {
+      width: 100%;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      color: var(--text);
+      font-size: 17px;
+      padding: 15px 16px;
+      outline: none;
+      font-family: inherit;
+      margin-bottom: 12px;
+      transition: border-color 0.15s;
+      caret-color: var(--accent);
+    }
+    .modal-input:focus { border-color: var(--accent); }
+    .modal-input::placeholder { color: var(--dim); }
+
+    .modal-save {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      border-radius: 12px;
+      color: #0d0d0d;
+      font-size: 16px;
+      font-weight: 600;
+      padding: 15px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: opacity 0.12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .modal-save:active { opacity: 0.8; }
+
+    /* ── DIVIDER ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 32px 24px 0;
+    }
+
+    /* ── HISTORY ── */
+    .history-wrap { padding: 0 24px; }
+
+    .history-toggle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .history-toggle .section-label { color: var(--dim); }
+    .chevron {
+      font-size: 12px;
+      color: var(--dim);
+      transition: transform 0.2s;
+    }
+    .chevron.open { transform: rotate(180deg); }
+
+    .history-body { display: none; }
+    .history-body.open { display: block; }
+
+    .hist-day { margin-bottom: 28px; }
+
+    .hist-day-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .hist-day-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--dim);
+      text-transform: capitalize;
+    }
+    .hist-score {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .hist-obj {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .hist-obj:last-child { border-bottom: none; }
+
+    .hist-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--border);
+      transition: background 0.15s;
+    }
+    .hist-obj.done .hist-dot { background: var(--green); }
+
+    .hist-text {
+      font-size: 14px;
+      color: var(--dim);
+      word-break: break-word;
+    }
+    .hist-obj.done .hist-text { text-decoration: line-through; }
+
+    .empty-hist {
+      font-size: 14px;
+      color: var(--dim);
+      padding: 8px 0 20px;
+    }
+  </style>
 </head>
 <body>
-  <p>Hello</p>
+
+  <header>
+    <div class="app-eyebrow">Objectifs</div>
+    <div class="app-date" id="today-label"></div>
+  </header>
+
+  <!-- TODAY -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label">Aujourd'hui</span>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span class="section-meta" id="today-progress"></span>
+        <button class="add-inline" id="add-today-btn" title="Ajouter pour aujourd'hui">+</button>
+      </div>
+    </div>
+    <ul class="obj-list" id="today-list"></ul>
+  </section>
+
+  <!-- TOMORROW -->
+  <section class="section">
+    <div class="section-header">
+      <span class="section-label">Demain</span>
+      <span class="section-meta" id="tomorrow-label"></span>
+    </div>
+    <ul class="obj-list" id="tomorrow-list"></ul>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- HISTORY -->
+  <div class="history-wrap">
+    <div class="history-toggle" id="history-toggle">
+      <span class="section-label">Historique</span>
+      <span class="chevron" id="hist-chevron">▾</span>
+    </div>
+    <div class="history-body" id="history-body"></div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fab" title="Ajouter un objectif pour demain">+</button>
+
+  <!-- MODAL -->
+  <div class="overlay" id="overlay">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="modal-title">Objectif pour demain</div>
+      <input
+        class="modal-input"
+        id="modal-input"
+        type="text"
+        placeholder="Qu'est-ce que tu veux accomplir ?"
+        maxlength="200"
+        autocomplete="off"
+        autocorrect="on"
+        spellcheck="true"
+      >
+      <button class="modal-save" id="modal-save">Ajouter</button>
+    </div>
+  </div>
+
   <script>
+    const KEY = 'demain_v1';
+
+    // ── DATA ──────────────────────────────────────────────────
+    function load() {
+      try { return JSON.parse(localStorage.getItem(KEY)) || {}; }
+      catch { return {}; }
+    }
+    function save(data) {
+      localStorage.setItem(KEY, JSON.stringify(data));
+    }
+    function dateKey(offset = 0) {
+      const d = new Date();
+      d.setDate(d.getDate() + offset);
+      return d.toISOString().slice(0, 10);
+    }
+    const today    = () => dateKey(0);
+    const tomorrow = () => dateKey(1);
+
+    function getObjs(dk) {
+      return load()[dk]?.objectives ?? [];
+    }
+    function addObj(dk, text) {
+      const data = load();
+      if (!data[dk]) data[dk] = { objectives: [] };
+      data[dk].objectives.push({ id: Date.now(), text, done: false });
+      save(data);
+    }
+    function toggleObj(dk, id) {
+      const data = load();
+      const obj = data[dk]?.objectives?.find(o => o.id === id);
+      if (obj) { obj.done = !obj.done; save(data); }
+    }
+    function deleteObj(dk, id) {
+      const data = load();
+      if (data[dk]) {
+        data[dk].objectives = data[dk].objectives.filter(o => o.id !== id);
+        save(data);
+      }
+    }
+
+    // ── FORMAT ────────────────────────────────────────────────
+    function fmt(dk, opts) {
+      const [y, m, d] = dk.split('-').map(Number);
+      return new Date(y, m - 1, d).toLocaleDateString('fr-FR', opts);
+    }
+    const fmtLong  = dk => fmt(dk, { weekday:'long',  day:'numeric', month:'long' });
+    const fmtShort = dk => fmt(dk, { weekday:'short', day:'numeric', month:'short' });
+
+    function esc(s) {
+      const d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // ── TOUCH: long-press to reveal delete ────────────────────
+    let pressTimer = null;
+    function setupItem(li, dk, obj) {
+      li.addEventListener('click', e => {
+        if (e.target.closest('.del-btn')) return;
+        if (li.classList.contains('reveal-del')) {
+          li.classList.remove('reveal-del');
+          return;
+        }
+        toggleObj(dk, obj.id);
+        render();
+      });
+
+      let startX = 0;
+      li.addEventListener('touchstart', e => {
+        startX = e.touches[0].clientX;
+        pressTimer = setTimeout(() => li.classList.add('reveal-del'), 500);
+      }, { passive: true });
+      li.addEventListener('touchmove', e => {
+        if (Math.abs(e.touches[0].clientX - startX) > 10) clearTimeout(pressTimer);
+      }, { passive: true });
+      li.addEventListener('touchend', () => clearTimeout(pressTimer));
+
+      li.querySelector('.del-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        li.style.transition = 'opacity 0.2s';
+        li.style.opacity = '0';
+        setTimeout(() => { deleteObj(dk, obj.id); render(); }, 180);
+      });
+    }
+
+    // ── RENDER LIST ───────────────────────────────────────────
+    function renderList(ulId, dk) {
+      const ul   = document.getElementById(ulId);
+      const objs = getObjs(dk);
+      ul.innerHTML = '';
+      if (!objs.length) {
+        ul.innerHTML = `<li class="empty">Aucun objectif</li>`;
+        return;
+      }
+      objs.forEach(obj => {
+        const li = document.createElement('li');
+        li.className = 'obj-item' + (obj.done ? ' done' : '');
+        li.innerHTML = `
+          <div class="circle"><span class="check-icon">✓</span></div>
+          <span class="obj-text">${esc(obj.text)}</span>
+          <button class="del-btn" aria-label="Supprimer">×</button>
+        `;
+        setupItem(li, dk, obj);
+        ul.appendChild(li);
+      });
+    }
+
+    // ── RENDER HISTORY ────────────────────────────────────────
+    function renderHistory() {
+      const data = load();
+      const tk   = today();
+      const tmk  = tomorrow();
+      const past = Object.keys(data)
+        .filter(k => k < tk && k !== tmk)
+        .sort((a, b) => b.localeCompare(a));
+
+      const body = document.getElementById('history-body');
+      body.innerHTML = '';
+
+      if (!past.length) {
+        body.innerHTML = `<p class="empty-hist">Aucun historique pour l'instant.</p>`;
+        return;
+      }
+      past.forEach(dk => {
+        const objs = data[dk]?.objectives ?? [];
+        const done = objs.filter(o => o.done).length;
+        const div  = document.createElement('div');
+        div.className = 'hist-day';
+        div.innerHTML = `
+          <div class="hist-day-head">
+            <span class="hist-day-name">${fmtLong(dk)}</span>
+            <span class="hist-score">${done}/${objs.length}</span>
+          </div>
+          ${objs.map(o => `
+            <div class="hist-obj${o.done ? ' done' : ''}">
+              <div class="hist-dot"></div>
+              <span class="hist-text">${esc(o.text)}</span>
+            </div>
+          `).join('')}
+        `;
+        body.appendChild(div);
+      });
+    }
+
+    // ── RENDER ────────────────────────────────────────────────
+    function render() {
+      const tk  = today();
+      const tmk = tomorrow();
+
+      // Header
+      document.getElementById('today-label').textContent = fmtLong(tk);
+
+      // Tomorrow label
+      document.getElementById('tomorrow-label').textContent = fmtShort(tmk);
+
+      // Lists
+      renderList('today-list',    tk);
+      renderList('tomorrow-list', tmk);
+
+      // Progress badge for today
+      const objs  = getObjs(tk);
+      const done  = objs.filter(o => o.done).length;
+      const prog  = document.getElementById('today-progress');
+      if (objs.length) {
+        prog.textContent = `${done}/${objs.length}`;
+        prog.className   = 'section-meta' + (done === objs.length && objs.length > 0 ? ' complete' : '');
+      } else {
+        prog.textContent = '';
+      }
+
+      // History (keep open/closed state)
+      renderHistory();
+    }
+
+    // ── MODAL ─────────────────────────────────────────────────
+    let addTarget = null;
+
+    function openModal(dk) {
+      addTarget = dk;
+      const isTomorrow = dk === tomorrow();
+      document.getElementById('modal-title').textContent =
+        isTomorrow ? 'Objectif pour demain' : 'Objectif pour aujourd\'hui';
+      document.getElementById('modal-input').value = '';
+      document.getElementById('overlay').classList.add('open');
+      // Focus after animation
+      setTimeout(() => document.getElementById('modal-input').focus(), 320);
+    }
+    function closeModal() {
+      document.getElementById('overlay').classList.remove('open');
+      addTarget = null;
+    }
+    function saveModal() {
+      const text = document.getElementById('modal-input').value.trim();
+      if (!text || !addTarget) return;
+      addObj(addTarget, text);
+      closeModal();
+      render();
+    }
+
+    // ── HISTORY TOGGLE ────────────────────────────────────────
+    let histOpen = false;
+    document.getElementById('history-toggle').addEventListener('click', () => {
+      histOpen = !histOpen;
+      document.getElementById('history-body').classList.toggle('open', histOpen);
+      document.getElementById('hist-chevron').classList.toggle('open', histOpen);
+    });
+
+    // ── EVENTS ────────────────────────────────────────────────
+    document.getElementById('fab').addEventListener('click', () => openModal(tomorrow()));
+    document.getElementById('add-today-btn').addEventListener('click', () => openModal(today()));
+
+    document.getElementById('modal-save').addEventListener('click', saveModal);
+    document.getElementById('modal-input').addEventListener('keydown', e => {
+      if (e.key === 'Enter') saveModal();
+      if (e.key === 'Escape') closeModal();
+    });
+    document.getElementById('overlay').addEventListener('click', e => {
+      if (e.target === document.getElementById('overlay')) closeModal();
+    });
+
+    // ── INIT ──────────────────────────────────────────────────
+    render();
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
